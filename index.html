@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Document</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+    <script src="roll.js"></script>
+</head>
+<body>
+    <p class="p1" data-asyncload><img src="images/2.jpg" alt="" /></p>
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <p class="p2" data-asyncload><img src="images/3.jpg" alt="" /></p>
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <p class="p3" data-asyncload><img src="images/4.jpg" alt="" /></p>
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <p class="p4" data-asyncload><img src="images/img1.jpg" alt="" /></p>
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <script>
+        roll(document.querySelector(".p1"),{
+            callback: function (obj, pause, done){
+                console.log(obj.constructor._count);
+                //done(this);//结束
+                console.log(this);
+                //console.log(done);
+                var that = this;
+                pause(this,true);//暂停执行回调
+                setTimeout(function (){
+                    pause(that,false);//继续执行回调
+                },5000);
+            }
+        });
+        roll(document.querySelector(".p2"),{
+            callback: function (obj, pause, done){
+                //done(this);
+                console.log(this);
+                //console.log(pause);
+                //console.log(done);
+            }
+        });
+        roll(document.querySelector(".p3"),{
+            callback: function (obj, pause, done){
+                //console.log(obj.constructor._count);
+                //done(this);
+                console.log(this);
+                //console.log(pause);
+                //console.log(done);
+            }
+        });
+        roll(document.querySelector(".p4"),{
+            callback: function (obj, pause, done){
+                //console.log(obj.constructor._count);
+                //done(this);
+                console.log(this);
+                //console.log(pause);
+                //console.log(done);
+            }
+        });
+    </script>
+</body>
+</html>
