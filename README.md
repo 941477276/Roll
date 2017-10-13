@@ -1,8 +1,8 @@
-#Roll
+<h1>Roll</h1>
 
  Roll是一个轻量级的页面元素出现在视口时执行指定操作的js插件！Roll支持IE8+浏览器。<small style="color: #f90;">(注：该插件借用了<a href="https://github.com/toddmotto/echo" target="_blank">echo.js</a>代码)</small>
 
-###Roll用法
+<h3>Roll用法</h3>
 
     <!DOCTYPE html>
     <html lang="en">
@@ -41,13 +41,13 @@
     </body>
     </html>
 
-###roll(dom,options)
-#####dom
+<h3>roll(dom,options)</h3>
+<h5>dom</h5>
 Type: <code>dom object</code>  Default: <code>undefined</code>
 <code>dom</code>参数必须为一个dom对象，该参数为必填参数，如果未传递该参数则会自己抛出异常
-#####options
+<h5>options</h5>
 Type: <code>object</code> Default: <code>{}</code>
-######callback
+<h6></h6>callback
 Type: <code>function</code>  Default: <code>function (){}</code>
 callback为回调函数，当元素出现在视口时会调用该函数并传递三个参数：<code>obj</code>、<code>pause</code>、<code>done</code>
 >● obj
@@ -59,27 +59,27 @@ callback为回调函数，当元素出现在视口时会调用该函数并传递
 >● done
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;该参数为一个函数，调用该方法将结束监听该元素，此后不该元素再次出现在视口时将不再调用回调函数。该方法必须传递一个元素进去。
-######offset
+<h6>offset</h6>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;设置上下左右距离视口到多少就开始执行回调，默认为0，即只会执行出现在视口的元素的回调函数
-######throttle
+<h6>throttle</h6>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;元素出现在视口后延迟多少毫秒执行回调函数
-######offsetVertical
+<h6>offsetVertical</h6>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;垂直方向距离视口多少就开始执行回调函数，默认值为0
-######offsetHorizontal
+<h6>offsetHorizontal</h6>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;水平方向距离视口多少就开始执行回调函数，默认值为0
-######offsetTop
+<h6>offsetTop</h6>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;顶部方向距离viewport多少就开始执行回调函数，默认值为offsetVertical
-######offsetButton
+<h6>offsetButton</h6>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;底部方向距离viewport多少就开始执行回调函数，默认值为offsetVertical
-######offsetLeft
+<h6>offsetLeft</h6>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;左边方向距离viewport多少就开始执行回调函数，默认值为offsetHorizontal
-######offsetRight
+<h6>offsetRight</h6>
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;右边方向距离viewport多少就开始执行回调函数，默认值为ooffsetHorizontal
