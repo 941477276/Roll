@@ -29,7 +29,7 @@
   Roll.isHidden = function (element) {
     return (element.offsetParent === null);
   };
-  //判断元素是否在可视范围之内 
+  //判断元素是否在可视范围之内
   Roll.inView = function (element, view) {
     if (Roll.isHidden(element)) {
       return false;
@@ -50,7 +50,7 @@
       context.poll = null;
     }, context.delay);
   };
-  
+
   Roll.prototype._init = function (el,opts) {
     opts = opts || {};
     this.offset = undefined;
@@ -61,6 +61,7 @@
     this.el = el;
     this.id = "LYN_" + new Date().getTime() + (Roll._count2++);
     Roll._count++;
+    this.el.setAttribute('data-rull-id', this.id);
 
     var that = this,
         offsetAll = opts.offset || 0,
@@ -78,9 +79,9 @@
     this.delay = optionToInt(opts.throttle, 200);
     this.useDebounce = opts.debounce !== false;
     this.callback = opts.callback;
-    
+
     this.render();
-    
+
     this.contexts.push({
       id: this.id,
       context: this
@@ -89,7 +90,7 @@
     //避免多次绑定同一事件
     if(!Roll.eventBinded){
       if (document.addEventListener) {
-        
+
         root.addEventListener('scroll', (function (context){
           return eventFn
         })(this), false);
@@ -127,7 +128,7 @@
       //如果用户手动设置停止了，则不再调用回调函数
       if (!elem._done) {
         if(!elem._pause){
-          this.callback.call(elem, this, Roll.pause, Roll.done);  
+          this.callback.call(elem, this, Roll.pause, Roll.done);
         }
       }
     }
@@ -150,7 +151,16 @@
   //调用该方法会移除传入的元素的data-Roll属性，移除该属性后就不会再执行传入的回调了
   Roll.done = function (elem){
     if(!elem || !elem.nodeName){return;}
+    var rollId = elem.getAttribute('data-rull-id');
+    var index = getIndex(Roll.prototype.contexts, function (item){
+      return item.id == rollId;
+    });
+    if(index > -1){
+      // 移除Roll对象，以免占用内存
+      Roll.prototype.contexts.splice(index, 1);
+    }
     elem._done = true;
+    elem.setAttribute('data-done', 'true');
     Roll._count--;
   }
   /*暂停执行回调
@@ -160,17 +170,43 @@
   Roll.pause = function (elem, flag){
     if(!elem || !elem.nodeName){return;}
     if(flag == undefined){return;}
-    elem._pause = !!flag; 
+    elem._pause = !!flag;
+  }
+
+    /**
+     * 获取数组中符合条件的元素的索引
+     * @param arr 数组
+     * @param fn 一个函数，如果函数返回true，则返回该项的下标，如果没有找到则返回-1
+     */
+  function getIndex (arr, fn) {
+    if (!arr || arr.length === 0 || !fn || (typeof fn !== 'function')) {
+        return -1;
+    }
+
+    if (arr.findIndex) {
+        return arr.findIndex(fn);
+    }
+    var len = arr.length;
+    var i = 0;
+    var index = -1;
+    for (; i < len; i++) {
+        let item = arr[i];
+        if (fn(item, index, arr) === true) {
+            index = i;
+            break;
+        }
+    }
+    return index;
   }
 
   function eventFn(){
-      var contexts = Roll.prototype.contexts;
-      /*每个Roll对象都有自己的render、debounceOrThrottle等方法、offset、poll、delay、el等属性，所以在scroll、onload事件中
-      最重要的是执行debounceOrThrottle该方法，而该方法中使用了Roll对象自己的render、debounceOrThrottle等，因此就在调用时的调用者就必须是
-      Roll对象*/
-      for(var i = 0,len = Roll.prototype.contexts.length; i < len; i ++){
-        Roll.prototype.debounceOrThrottle.call(contexts[i].context);
-      }
+    var contexts = Roll.prototype.contexts;
+    /*每个Roll对象都有自己的render、debounceOrThrottle等方法、offset、poll、delay、el等属性，所以在scroll、onload事件中
+    最重要的是执行debounceOrThrottle该方法，而该方法中使用了Roll对象自己的render、debounceOrThrottle等，因此就在调用时的调用者就必须是
+    Roll对象*/
+    for(var i = 0,len = Roll.prototype.contexts.length; i < len; i ++){
+      Roll.prototype.debounceOrThrottle.call(contexts[i].context);
+    }
   }
 
   return roll;
