@@ -1,85 +1,109 @@
-<h1>Roll</h1>
+# Roll是一个轻量级的页面元素滚动监听js插件，当元素出现在视口时可以执行指定的操作！Roll支持IE8+浏览器。<small style="color: #f90;">(注：该插件借用了<a href="https://github.com/toddmotto/echo" target="_blank">echo.js</a>代码)</small>
+> 注意：一个页面最多只能`new`一个实例，因为在`Roll`初始化时给浏览器绑定了`scroll`、`resize`、`laod`事件，如果new 多个实例，则会给浏览器绑定多次相同事件
+## Roll用法
+```
+<body>
+    <p class="p1" data-asyncload><img src="images/2.jpg" alt="" /></p>
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <p class="p2" data-asyncload><img src="images/3.jpg" alt="" /></p>
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <p class="p3" data-asyncload><img src="images/4.jpg" alt="" /></p>
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <p class="p4" data-asyncload><img src="images/img1.jpg" alt="" /></p>
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <br /><br /><br /><br /><br /><br /><br />
+    <script>
+        var roll = new Roll({
+          offsetTop: 100
+        });
+        console.log(roll);
+        roll.push(document.querySelector(".p1"), function (context, done){
+            console.log('图片1出现在视口，可以执行操作了！');
+            done(this, context);
+        });
+        roll.push(document.querySelector(".p2"), function (context, done){
+          console.log('图片2出现在视口，可以执行操作了！');
+          done(this, context);
+          //roll.destroy();
+        });
+        roll.push(document.querySelector(".p3"), function (context, done){
+          console.log('图片3出现在视口，可以执行操作了！');
+          done(this, context);
+        });
+        roll.push(document.querySelector(".p4"), function (context, done){
+          console.log('图片4出现在视口，可以执行操作了！');
+          done(this, context);
+        });
+    </script>
+</body>
+```
+## new Roll(options) options可用参数说明
+> `callback`
 
- Roll是一个轻量级的页面元素出现在视口时执行指定操作的js插件！Roll支持IE8+浏览器。<small style="color: #f90;">(注：该插件借用了<a href="https://github.com/toddmotto/echo" target="_blank">echo.js</a>代码)</small>
+回调函数。当监听的元素出现在视口时会被执行，并且调用时会传递2个参数给使用者。该函数的this指向当前出现在视口的元素。
 
-<h3>Roll用法</h3>
+    参数一: context
 
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
+        context 为 Roll 对象实例
+    
+    参数二: done
 
-        <meta charset="UTF-8" />
-        <title>Document</title>
-        <style>
-            body,p{margin: 0;padding: 0;}
-        </style>
-        <script src="roll.js"></script>
-    </head>
-    <body>
-        <p class="p1">我是第一个p标签</p>
-        <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-        <p class="p2">我是第二个p标签</p>
-        <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-        <p class="p3">我是第三个p标签</p>
-        <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-        <p class="p4">我是第四个p标签</p>
-        <br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br /><br />
-        <script>
-            roll(document.querySelector(".p3"),{
-                callback: function (obj, pause, done){
-                    console.log(this);//这个this指向 .p3 这个元素
-                    console.log("我出现在视口了！");
-                    var that = this;
+        done为一个函数，调用该方法即可停止监听当前元素
+
+> `offsetTop`
+
+设置元素顶部距离视口多少就开始执行回调函数，默认值为0
+> `offsetLeft`
+
+设置元素左侧距离视口多少就开始执行回调函数，默认值为0
+> `offsetRight`
+
+设置元素右侧距离视口多少就开始执行回调函数，默认值为0
+> `offsetBottom`
+
+设置元素底部距离视口多少就开始执行回调函数，默认值为0
+## Roll实例方法
+> `push(ele, cb, option)`
+
+将元素添加进监听队列，`Roll`在初始化时给浏览器绑定了`scroll`、`resize`、`laod`事件，因此当触发这些事件时都会计算队列中的元素是否出现在视口内，如果出现在视口内则执行回调函数。
+1. `ele`：dom元素[必填]
+2. `cb`：回调函数[可选]，如果传递了则先执行此回调，再执行全局的回调函数，该函数接收2个参数
+
+    + `context`: Roll对象实例
+    + `done`：一个函数，执行该函数则表示不需要再监听当前元素了。done函数用法：`done(当前dom元素, context)`;
+3. `options`：可选参数，这个参数里面的值会覆盖`new Roll(options)`中的options值
+    
+    + `immediate`
+
+        表示元素添加进队列后是否立即执行一遍，默认值为true
+    + `offsetTop`
+        设置元素顶部距离视口多少就开始执行回调函数，默认值为0
+    + `offsetLeft`
+
+        设置元素左侧距离视口多少就开始执行回调函数，默认值为0
+    + `offsetRight`
+
+        设置元素右侧距离视口多少就开始执行回调函数，默认值为0
+    + `offsetBottom`
         
-                    setTimeout(function (){
-                        /*调用done()方法后，当该元素再次出现在视口时不会再执行callback回调函数了！*/
-                        done(that);
-                    }, 3000);
-                }
-            });
-        </script>
-    </body>
-    </html>
+        设置元素底部距离视口多少就开始执行回调函数，默认值为0
+    
+> `destroy`
 
-<h3>roll(dom,options)</h3>
-<h5>dom</h5>
-Type: <code>dom object</code>  Default: <code>undefined</code>
-<code>dom</code>参数必须为一个dom对象，该参数为必填参数，如果未传递该参数则会自己抛出异常
-<h5>options</h5>
-Type: <code>object</code> Default: <code>{}</code>
-<h6></h6>callback
-Type: <code>function</code>  Default: <code>function (){}</code>
-callback为回调函数，当元素出现在视口时会调用该函数并传递三个参数：<code>obj</code>、<code>pause</code>、<code>done</code>
->● obj
+销毁当前`Roll`实例
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;该参数为Roll对象实例，Roll使用了工厂模式，每调用一次roll()方法就好会创建一个Roll实例.
->● pause
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;该参数为一个函数，调用该方法可以暂时停止调用callback，该方法当你在用用ajax请求数据时可以调用，如果不调用它则会出现拖动滚动条时回调函数执行多遍，这样就造成了请求发送了多次的问题。该方法接收两个参数，参数一为当前dom元素对象，参数二为Boolean值，如果值为true则暂停，值为false则取消暂停。取消后当元素再次出现在视口时回调函数又会被调用。
->● done
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;该参数为一个函数，调用该方法将结束监听该元素，此后不该元素再次出现在视口时将不再调用回调函数。该方法必须传递一个元素进去。
-<h6>offset</h6>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;设置上下左右距离视口到多少就开始执行回调，默认为0，即只会执行出现在视口的元素的回调函数
-<h6>throttle</h6>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;元素出现在视口后延迟多少毫秒执行回调函数
-<h6>offsetVertical</h6>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;垂直方向距离视口多少就开始执行回调函数，默认值为0
-<h6>offsetHorizontal</h6>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;水平方向距离视口多少就开始执行回调函数，默认值为0
-<h6>offsetTop</h6>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;顶部方向距离viewport多少就开始执行回调函数，默认值为offsetVertical
-<h6>offsetButton</h6>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;底部方向距离viewport多少就开始执行回调函数，默认值为offsetVertical
-<h6>offsetLeft</h6>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;左边方向距离viewport多少就开始执行回调函数，默认值为offsetHorizontal
-<h6>offsetRight</h6>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;右边方向距离viewport多少就开始执行回调函数，默认值为ooffsetHorizontal

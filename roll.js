@@ -6,25 +6,19 @@
   } else if (typeof exports === 'object') {
     module.exports = factory;
   } else {
-    root.roll = factory(root);
+    root.Roll = factory(root);
   }
 })(this, function (root) {
   'use strict';
 
-  function roll(el,options){
-    return new Roll(el,options);
-  }
-
-  var Roll = function (el,options){
-    if(!el || !el.nodeName){throw "必须传递一个元素！";}
+  var Roll = function (options){
     options = options || {
       callback: function (){}
     };
-    this._init(el,options);
+    this._init(options);
   };
   Roll._count = 0;
   Roll._count2 = 0;
-  Roll.eventBinded = false;
   //判断元素是否隐藏，只对display: none;的元素有效，visibility: hidden;无效
   Roll.isHidden = function (element) {
     return (element.offsetParent === null);
@@ -37,141 +31,207 @@
     var box = element.getBoundingClientRect();
     return (box.right >= view.l && box.bottom >= view.t && box.left <= view.r && box.top <= view.b);
   };
-  //存储所有Roll的上下文对象（即this）
-  Roll.prototype.contexts = [];
-  Roll.prototype.debounceOrThrottle = function (context) {
-    context = context || this;
-    if(!context.useDebounce && !!context.poll) {
-      return;
-    }
-    clearTimeout(context.poll);
-    context.poll = setTimeout(function(){
-      context.render();
-      context.poll = null;
-    }, context.delay);
+  // 计算offset值
+  Roll.optionToInt = function (opt, fallback) {
+    return parseInt(opt || fallback, 10);
   };
 
-  Roll.prototype._init = function (el,opts) {
+  Roll.prototype._init = function (opts) {
     opts = opts || {};
     this.offset = undefined;
-    this.poll = undefined;
+    this.pollTimer = undefined;
     this.delay = undefined;
     this.useDebounce = undefined;
-    this.callback = undefined;
-    this.el = el;
-    this.id = "LYN_" + new Date().getTime() + (Roll._count2++);
-    Roll._count++;
-    this.el.setAttribute('data-rull-id', this.id);
+    //this.callback = undefined;
+    this.id = "LYN_roll_";
+    this.options = opts;
 
     var that = this,
         offsetAll = opts.offset || 0,
         offsetVertical = opts.offsetVertical || offsetAll,
-        offsetHorizontal = opts.offsetHorizontal || offsetAll,
-        optionToInt = function (opt, fallback) {
-          return parseInt(opt || fallback, 10);
-        };
+        offsetHorizontal = opts.offsetHorizontal || offsetAll;
     this.offset = {
-      t: optionToInt(opts.offsetTop, offsetVertical),
-      b: optionToInt(opts.offsetBottom, offsetVertical),
-      l: optionToInt(opts.offsetLeft, offsetHorizontal),
-      r: optionToInt(opts.offsetRight, offsetHorizontal)
+      t: Roll.optionToInt(opts.offsetTop, offsetVertical),
+      b: Roll.optionToInt(opts.offsetBottom, offsetVertical),
+      l: Roll.optionToInt(opts.offsetLeft, offsetHorizontal),
+      r: Roll.optionToInt(opts.offsetRight, offsetHorizontal)
     };
-    this.delay = optionToInt(opts.throttle, 200);
-    this.useDebounce = opts.debounce !== false;
-    this.callback = opts.callback;
+    this.delay = Roll.optionToInt(opts.throttle, 100);
+    this.useDebounce = typeof opts.debounce !== 'undefined' ? !!opts.debounce : true;
+    // 待执行元素列表
+    this.rollEles = [];
 
-    this.render();
+    var that = this;
+    var eventFn = function (){
+      var rollEles = that.rollEles;
+      var len = rollEles.length;
 
-    this.contexts.push({
-      id: this.id,
-      context: this
-    });
-
-    //避免多次绑定同一事件
-    if(!Roll.eventBinded){
-      if (document.addEventListener) {
-
-        root.addEventListener('scroll', (function (context){
-          return eventFn
-        })(this), false);
-        root.addEventListener('resize', (function (context){
-            return eventFn
-        })(this), false);
-        root.addEventListener('load', (function (context){
-            return eventFn
-        })(this), false);
-      } else {
-        root.attachEvent('onscroll', (function (context){
-            return eventFn
-        })(this));
-        root.attachEvent('onresize', (function (context){
-            return eventFn
-        })(this));
-        root.attachEvent('onload', (function (context){
-            return eventFn
-        })(this));
+      if(len === 0){
+        return;
       }
-      Roll.eventBinded = true;
-    }
-  };
-
-  Roll.prototype.render = function () {
-    var that = this,
-        elem = this.el,
-        view = {
-          l: 0 - that.offset.l,
-          t: 0 - that.offset.t,
-          b: (root.innerHeight || document.documentElement.clientHeight) + that.offset.b,
-          r: (root.innerWidth || document.documentElement.clientWidth) + that.offset.r
-        };
-    if (Roll.inView(elem, view)) {
-      //如果用户手动设置停止了，则不再调用回调函数
-      if (!elem._done) {
-        if(!elem._pause){
-          this.callback.call(elem, this, Roll.pause, Roll.done);
+      if(that.useDebounce) {
+        clearTimeout(that.pollTimer);
+        that.pollTimer = setTimeout(function(){
+          for(var i = 0; i < len; i++){
+            that.execute(rollEles[i]);
+          }
+          clearTimeout(that.pollTimer);
+        }, that.delay);
+      }else{
+        for(var i = 0; i < len; i++){
+          that.execute(rollEles[i]);
         }
       }
     }
 
-    if (Roll._count <= 0) {
-      this.detach();
-    }
-  };
-  //移除事件绑定
-  Roll.prototype.detach = function () {
-    if (document.removeEventListener) {
-      root.removeEventListener('scroll', eventFn);
-      root.removeEventListener('resize', eventFn);
+    this._eventFn = eventFn;
+
+    if (document.addEventListener) {
+      root.addEventListener('scroll', eventFn, false);
+      root.addEventListener('resize', eventFn, false);
+      root.addEventListener('load', eventFn, false);
     } else {
-      root.detachEvent('onscroll', eventFn);
-      root.detachEvent('onresize', eventFn);
+      root.attachEvent('onscroll', eventFn);
+      root.attachEvent('onresize', eventFn);
+      root.attachEvent('onload', eventFn);
     }
-    clearTimeout(this.poll);
   };
-  //调用该方法会移除传入的元素的data-Roll属性，移除该属性后就不会再执行传入的回调了
-  Roll.done = function (elem){
+
+  /**
+   * 将元素添加进执行队列
+   * @param ele dom元素
+   * @param executeImmediate 添加进队列后是否立即执行判断
+   * @param options 其他参数
+   */
+  Roll.prototype.push = function (ele, cb, options){
+    if(!ele || !ele.nodeName){
+      console.error('push方法第一个参数必须是一个dom元素');
+      return;
+    }
+    if(!options){
+      options = {};
+    }
+    if(typeof options.immediate === 'undefined'){
+      options.immediate = true;
+    }
+    if(typeof cb === 'function'){
+      options.callback = cb;
+    }
+    let id = this.id + (++Roll._count2);
+    let obj = {
+        id: id,
+        el: ele,
+        options: options
+    };
+    ele.setAttribute('data-rull-id', id);
+    this.rollEles.push(obj);
+    if(options.immediate){
+      this.execute(obj);
+    }
+    obj = null;
+    return this;
+  }
+
+  /**
+   * 执行滚动监听
+   */
+  Roll.prototype.execute = function (rollItem) {
+    if(typeof rollItem === 'undefined' || typeof rollItem.el === 'undefined'){
+      return;
+    }
+    var options = this.options,
+        offsetAll = options.offset || 0,
+        offsetVertical = options.offsetVertical || offsetAll,
+        offsetHorizontal = options.offsetHorizontal || offsetAll;
+    var that = this,
+        elem = rollItem.el,
+        elOption = rollItem.options,
+        view = {
+          l: 0 - that.offset.r,
+          t: 0 - that.offset.b,
+          b: (root.innerHeight || document.documentElement.clientHeight) + that.offset.t,
+          r: (root.innerWidth || document.documentElement.clientWidth) + that.offset.l
+        };
+    // 优先使用当前元素定义的边界值
+    if(typeof elOption.offsetTop !== 'undefined'){
+      view.b = (root.innerHeight || document.documentElement.clientHeight) + Roll.optionToInt(elOption.offsetTop, offsetVertical);
+    }
+    if(typeof elOption.offsetLeft !== 'undefined'){
+      view.r = (root.innerWidth || document.documentElement.clientWidth) + Roll.optionToInt(elOption.offsetLeft, offsetHorizontal);
+    }
+    if(typeof elOption.offsetBottom !== 'undefined'){
+      view.t = 0 - Roll.optionToInt(elOption.offsetBottom, offsetVertical);
+    }
+    if(typeof elOption.offsetRight !== 'undefined'){
+      view.l = 0 - Roll.optionToInt(elOption.offsetRight, offsetHorizontal);
+    }
+    if (Roll.inView(elem, view)) {
+      // 如果用户手动设置停止了，则不再调用回调函数
+        if (!elem._done) {
+        if(!elem._pause){
+          // 先执行自身回调，再执行全局回调
+          if(typeof elOption.callback === 'function'){
+            elOption.callback.call(elem, this, this.done);
+          }
+          if(typeof options.callback === 'function'){
+            options.callback.call(elem, this, this.done);
+          }
+        }
+      }
+    }
+
+    return this;
+  };
+
+  // 移除事件绑定
+  Roll.prototype.destroy = function () {
+    if (document.removeEventListener) {
+      root.removeEventListener('scroll', this._eventFn);
+      root.removeEventListener('resize', this._eventFn);
+      root.removeEventListener('load', this._eventFn);
+    } else {
+      root.detachEvent('onscroll', this._eventFn);
+      root.detachEvent('onresize', this._eventFn);
+      root.detachEvent('onload', this._eventFn);
+    }
+    this.offset = null;
+    this.options = null;
+    this.offset = null;
+    // 待执行元素列表
+    this.rollEles = null;
+    this._eventFn = null;
+    clearTimeout(this.pollTimer);
+    this.pollTimer = null;
+  };
+
+  /**
+   * 滚动条滚动时不再监听elem元素，移除后不再执行回调
+   * @param elem dom元素
+   * @param context Roll对象
+   */
+  Roll.prototype.done = function (elem, context){
     if(!elem || !elem.nodeName){return;}
+    if(!(this instanceof Roll) && !(context instanceof Roll)){
+      console.log('检测到done方法内的this不是Roll实例！done(elem, context)方法需要context参数，context参数必须是Roll实例');
+      return;
+    }else if(!(context instanceof Roll) && (this instanceof Roll)){
+      context = this;
+    }
+
     var rollId = elem.getAttribute('data-rull-id');
-    var index = getIndex(Roll.prototype.contexts, function (item){
+    var rollEles = context.rollEles;
+    var index = getIndex(rollEles, function (item){
       return item.id == rollId;
     });
     if(index > -1){
       // 移除Roll对象，以免占用内存
-      Roll.prototype.contexts.splice(index, 1);
+      rollEles.splice(index, 1);
     }
+    console.log('完成操作')
     elem._done = true;
     elem.setAttribute('data-done', 'true');
-    Roll._count--;
-  }
-  /*暂停执行回调
-    当拖动滚动条并且页面元素已经在视口时，再次拖动滚动条依然会触发callback回调函数，如果回调函数执行的是ajax操作
-    那么就会导致发送了多个请求，这样是不好的，因此pause就是为了解决这个问题而产生的。
-  */
-  Roll.pause = function (elem, flag){
-    if(!elem || !elem.nodeName){return;}
-    if(flag == undefined){return;}
-    elem._pause = !!flag;
-  }
+    elem = null;
+  };
 
     /**
      * 获取数组中符合条件的元素的索引
@@ -198,16 +258,5 @@
     }
     return index;
   }
-
-  function eventFn(){
-    var contexts = Roll.prototype.contexts;
-    /*每个Roll对象都有自己的render、debounceOrThrottle等方法、offset、poll、delay、el等属性，所以在scroll、onload事件中
-    最重要的是执行debounceOrThrottle该方法，而该方法中使用了Roll对象自己的render、debounceOrThrottle等，因此就在调用时的调用者就必须是
-    Roll对象*/
-    for(var i = 0,len = Roll.prototype.contexts.length; i < len; i ++){
-      Roll.prototype.debounceOrThrottle.call(contexts[i].context);
-    }
-  }
-
-  return roll;
+  return Roll;
 });
