@@ -1,16 +1,19 @@
-;(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    define(function() {
-      return factory(root);
-    });
-  } else if (typeof exports === 'object') {
-    module.exports = factory;
+;(function (factory){
+  if ( typeof define === "function" && define.amd ) {
+    define( ["Roll"], factory );
+  } else if (typeof module === "object" && module.exports) {
+    module.exports = factory( window );
   } else {
-    root.Roll = factory(root);
+    window.Roll = factory( window );
+    try{
+      if(typeof define === "function"){
+        define(function (require){
+          return factory(window);
+        });
+      }
+    }catch(e){console.log(e);}
   }
-})(this, function (root) {
-  'use strict';
-
+})(function (root) {
   var Roll = function (options){
     options = options || {
       callback: function (){}
@@ -47,9 +50,9 @@
     this.options = opts;
 
     var that = this,
-        offsetAll = opts.offset || 0,
-        offsetVertical = opts.offsetVertical || offsetAll,
-        offsetHorizontal = opts.offsetHorizontal || offsetAll;
+      offsetAll = opts.offset || 0,
+      offsetVertical = opts.offsetVertical || offsetAll,
+      offsetHorizontal = opts.offsetHorizontal || offsetAll;
     this.offset = {
       t: Roll.optionToInt(opts.offsetTop, offsetVertical),
       b: Roll.optionToInt(opts.offsetBottom, offsetVertical),
@@ -86,15 +89,9 @@
 
     this._eventFn = eventFn;
 
-    if (document.addEventListener) {
-      root.addEventListener('scroll', eventFn, false);
-      root.addEventListener('resize', eventFn, false);
-      root.addEventListener('load', eventFn, false);
-    } else {
-      root.attachEvent('onscroll', eventFn);
-      root.attachEvent('onresize', eventFn);
-      root.attachEvent('onload', eventFn);
-    }
+    on(root, 'scroll', eventFn);
+    on(root, 'resize', eventFn);
+    on(root, 'load', eventFn);
   };
 
   /**
@@ -117,11 +114,11 @@
     if(typeof cb === 'function'){
       options.callback = cb;
     }
-    let id = this.id + (++Roll._count2);
-    let obj = {
-        id: id,
-        el: ele,
-        options: options
+    var id = this.id + (++Roll._count2);
+    var obj = {
+      id: id,
+      el: ele,
+      options: options
     };
     ele.setAttribute('data-rull-id', id);
     this.rollEles.push(obj);
@@ -140,18 +137,18 @@
       return;
     }
     var options = this.options,
-        offsetAll = options.offset || 0,
-        offsetVertical = options.offsetVertical || offsetAll,
-        offsetHorizontal = options.offsetHorizontal || offsetAll;
+      offsetAll = options.offset || 0,
+      offsetVertical = options.offsetVertical || offsetAll,
+      offsetHorizontal = options.offsetHorizontal || offsetAll;
     var that = this,
-        elem = rollItem.el,
-        elOption = rollItem.options,
-        view = {
-          l: 0 - that.offset.r,
-          t: 0 - that.offset.b,
-          b: (root.innerHeight || document.documentElement.clientHeight) + that.offset.t,
-          r: (root.innerWidth || document.documentElement.clientWidth) + that.offset.l
-        };
+      elem = rollItem.el,
+      elOption = rollItem.options,
+      view = {
+        l: 0 - that.offset.r,
+        t: 0 - that.offset.b,
+        b: (root.innerHeight || document.documentElement.clientHeight) + that.offset.t,
+        r: (root.innerWidth || document.documentElement.clientWidth) + that.offset.l
+      };
     // 优先使用当前元素定义的边界值
     if(typeof elOption.offsetTop !== 'undefined'){
       view.b = (root.innerHeight || document.documentElement.clientHeight) + Roll.optionToInt(elOption.offsetTop, offsetVertical);
@@ -165,9 +162,10 @@
     if(typeof elOption.offsetRight !== 'undefined'){
       view.l = 0 - Roll.optionToInt(elOption.offsetRight, offsetHorizontal);
     }
+    console.log('rollItem in vide', Roll.inView(elem, view), elem, view)
     if (Roll.inView(elem, view)) {
       // 如果用户手动设置停止了，则不再调用回调函数
-        if (!elem._done) {
+      if (!elem._done) {
         if(!elem._pause){
           // 先执行自身回调，再执行全局回调
           if(typeof elOption.callback === 'function'){
@@ -185,15 +183,9 @@
 
   // 移除事件绑定
   Roll.prototype.destroy = function () {
-    if (document.removeEventListener) {
-      root.removeEventListener('scroll', this._eventFn);
-      root.removeEventListener('resize', this._eventFn);
-      root.removeEventListener('load', this._eventFn);
-    } else {
-      root.detachEvent('onscroll', this._eventFn);
-      root.detachEvent('onresize', this._eventFn);
-      root.detachEvent('onload', this._eventFn);
-    }
+    off(root, 'scroll', this._eventFn);
+    off(root, 'resize', this._eventFn);
+    off(root, 'load', this._eventFn);
     this.offset = null;
     this.options = null;
     this.offset = null;
@@ -233,30 +225,169 @@
     elem = null;
   };
 
-    /**
-     * 获取数组中符合条件的元素的索引
-     * @param arr 数组
-     * @param fn 一个函数，如果函数返回true，则返回该项的下标，如果没有找到则返回-1
-     */
+  /**
+   * 获取数组中符合条件的元素的索引
+   * @param arr 数组
+   * @param fn 一个函数，如果函数返回true，则返回该项的下标，如果没有找到则返回-1
+   */
   function getIndex (arr, fn) {
     if (!arr || arr.length === 0 || !fn || (typeof fn !== 'function')) {
-        return -1;
+      return -1;
     }
 
     if (arr.findIndex) {
-        return arr.findIndex(fn);
+      return arr.findIndex(fn);
     }
     var len = arr.length;
     var i = 0;
     var index = -1;
     for (; i < len; i++) {
-        let item = arr[i];
-        if (fn(item, index, arr) === true) {
-            index = i;
-            break;
-        }
+      var item = arr[i];
+      if (fn(item, index, arr) === true) {
+        index = i;
+        break;
+      }
     }
     return index;
   }
+  /**
+   * 绑定事件
+   * @param ele dom元素
+   * @param eventName 事件名称
+   * @param fn 事件回调函数
+   */
+  function on(ele, eventName, fn) {
+    if (!ele) {
+      console.error('on(ele, eventName, fn)函数第一个参数必须是一个dom元素!');
+      return this;
+    }
+    if (!eventName || typeof eventName !== 'string') {
+      console.error('on(ele, eventName, fn)函数第二个参数必须是一个字符串!');
+      return this;
+    }
+    if (!fn || typeof fn !== 'function') {
+      console.error('on(ele, eventName, fn)函数第三个参数必须是一个函数!');
+      return this;
+    }
+    if (!ele._events) {
+      ele._events = {};
+    }
+
+    if (!(eventName in ele._events)) {
+      ele._events[eventName] = [fn];
+      if (document.addEventListener) {
+        var eventFn = function (e) {
+          var events = ele._events[eventName];
+          if (events && events.length > 0) {
+            for (var i = 0, len = events.length; i < len; i++) {
+              if (events[i]) {
+                events[i].call(ele, e);
+              }
+            }
+          }
+        };
+        ele.addEventListener(eventName, eventFn, false);
+        // 把事件回调函数也存起来，这样在移除事件的时候才能真正的把该事件移除掉
+        ele._events[eventName + '_fn'] = eventFn;
+      } else if (window.attachEvent) {
+        var eventFn = function () {
+          var events = ele._events[eventName];
+          var e = window.event;
+          e.preventDefault = function () {
+            e.returnValue = false;
+          };
+          e.stopPropagation = function () {
+            e.cancelBubble = true;
+          };
+          for (var i = 0, len = events.length; i < len; i++) {
+            events[i].call(ele, e);
+          }
+        };
+        ele.attachEvent('on' + eventName, eventFn);
+        ele._events[eventName + '_fn'] = eventFn;
+      }
+    } else {
+      //ele._events[eventName] = [fn];
+      var index = this.getIndex(ele._events[eventName], function (item) {
+        return item === fn;
+      });
+      if (index < 0 || typeof index === 'undefined') {
+        ele._events[eventName].push(fn);
+      }
+    }
+    return this;
+  };
+  /**
+   * 解绑事件
+   * @param ele dom元素
+   * @param eventName 事件名称
+   * @param fn 事件回调函数
+   */
+  function off(ele, eventName, fn) {
+    if (!ele) {
+      console.error('off(ele, eventName, fn)函数第一个参数必须是一个dom元素!');
+      return;
+    }
+    if (!eventName || typeof eventName !== 'string') {
+      console.error('off(ele, eventName, fn)函数第二个参数必须是一个字符串!');
+      return;
+    }
+    if (!ele._events) {
+      return this;
+    }
+    if (!eventName) {
+      return this;
+    }
+    console.log('off', eventName, ele);
+    var events = ele._events[eventName];
+    var eventFn = ele._events[eventName + '_fn'];
+    // 如果只传递了事件名称而未传递具体的事件，则将指定事件名称的所有回调函数全部清除
+    if (eventName && !fn) {
+      if (document.removeEventListener) {
+        //for(var i = 0, len = events.length; i < len; i++){
+        ele.removeEventListener(eventName, eventFn, false);
+        //}
+      } else if (window.detachEvent) {
+        //for(var i = 0, len = events.length; i < len; i++){
+        ele.detachEvent('on' + eventName, eventFn);
+        //}
+      }
+      delete ele._events[eventName];
+      delete ele._events[eventName + '_fn'];
+    } else if (eventName && fn) {
+      if (!events) {
+        return;
+      }
+      if (document.removeEventListener) {
+        var index = this.getIndex(events, function (item) {
+          return item === fn;
+        });
+        if (index > -1) {
+          events.splice(index, 1);
+        }
+        if (events.length === 0) {
+          delete ele._events[eventName];
+          delete ele._events[eventName + '_fn'];
+        }
+      } else if (window.detachEvent) {
+        if (!events) {
+          return;
+        }
+        var index = this.getIndex(events, function (item) {
+          return item === fn;
+        });
+        if (index > -1) {
+          events.splice(index, 1);
+        }
+        if (events.length === 0) {
+          delete ele._events[eventName];
+          delete ele._events[eventName + '_fn'];
+        }
+      }
+    }
+    events = null;
+    return this;
+  };
+
   return Roll;
 });
